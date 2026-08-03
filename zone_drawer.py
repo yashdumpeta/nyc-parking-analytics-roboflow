@@ -14,9 +14,9 @@ def sort_points(pts):
     """
     if len(pts) <= 2:
         return pts
-    # Calculate centroid
     cx = sum(p[0] for p in pts) / len(pts)
     cy = sum(p[1] for p in pts) / len(pts)
+    
     # Sort points by polar angle relative to the centroid
     return sorted(pts, key=lambda p: math.atan2(p[1] - cy, p[0] - cx))
 
@@ -41,16 +41,17 @@ def run_zone_drawer(image_url: str):
         print("[Error] Could not fetch snapshot from NYC DOT feed.")
         return
 
-    window_name = "West Curb Zone Drawer | 'r': Reset | 'e': New Image | 'c': Confirm | 'q': Quit"
+    window_name = "West Curb Zone Drawer | 'z': Undo | 'r': Reset | 'e': New Image | 'c': Confirm | 'q': Quit"
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
     cv2.setMouseCallback(window_name, mouse_callback)
     
     print("\n--- INSTRUCTIONS ---")
     print("1. Left-click along the 4 corners of the West Curb parking lane.")
-    print("2. Press 'r' to reset points if you make a mistake.")
-    print("3. Press 'e' to fetch a new image from the stream.")
-    print("4. Press 'c' to confirm and print the NumPy array coordinates.")
-    print("5. Press 'q' to quit.\n")
+    print("2. Press 'z' to undo/remove the last clicked point.")
+    print("3. Press 'r' to reset all points.")
+    print("4. Press 'e' to fetch a new image from the stream.")
+    print("5. Press 'c' to confirm and print the NumPy array coordinates.")
+    print("6. Press 'q' to quit.\n")
     
     failed_retries_count = 0
     while True:
@@ -73,7 +74,13 @@ def run_zone_drawer(image_url: str):
         cv2.imshow(window_name, display_frame)
  
         key = cv2.waitKey(50) & 0xFF
-        if key == ord('r'):
+        if key == ord('z'):
+            if points:
+                removed = points.pop()
+                print(f"Undo: Removed last recorded point {removed}")
+            else:
+                print("No points to undo.")
+        elif key == ord('r'):
             points.clear()
             print("Points reset.")
         elif key == ord('e'):

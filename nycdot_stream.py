@@ -48,9 +48,9 @@ class NYCDOTStreamReader:
 
 
 if __name__ == "__main__":
-    york_ave_url = "https://webcams.nyctmc.org/api/cameras/d45fb588-de4c-4139-9e27-5b2d4c371b3d/image"
+    YORK_AVE_URL = "https://webcams.nyctmc.org/api/cameras/d45fb588-de4c-4139-9e27-5b2d4c371b3d/image"
 
-    stream_reader = NYCDOTStreamReader(york_ave_url, poll_interval=2.0)
+    stream_reader = NYCDOTStreamReader(YORK_AVE_URL, poll_interval=2.0)
 
     print("Finished initializing NYC-DOT Stream Reader object.\n")
     print("Starting stream loop... Press 'q' in the window to quit.\n")
