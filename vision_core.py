@@ -8,8 +8,13 @@ from inference import get_model
 import json, cv2, numpy as np
 import inference, supervision as sv
 from nycdot_stream import NYCDOTStreamReader
+from enum import IntEnum
 
-
+class COCOVehicleClass(IntEnum):
+    CAR = 2
+    MOTORCYLE = 3
+    BUS = 5
+    TRUCK = 7
 
 class ParkingVisionCore:
     
@@ -36,6 +41,7 @@ class ParkingVisionCore:
         
     def __init__(self, zone_filepath: str = "zones.json", model_id: str = "yolov8n-640", confidence: float = 0.4):
         
+        self
         # Load zone matrix
         polygon_arr = self._load_zone_from_json(zone_filepath)
         
@@ -52,7 +58,21 @@ class ParkingVisionCore:
         self.model = get_model(model_id=model_id)
         print(f"[Success] Loaded Roboflow model '{model_id}' with confidence threshold {confidence}.\n")
 
-
+    def process_frame(self, frame: np.ndarray) -> tuple[np.ndarray, int]:
+        results = self.model.infer(frame, confidence=self.confidence)[0]
+        detections = sv.Detections.from_inference(results)
+        
+        vehicle_ids = [vehicle.value for vehicle in COCOVehicleClass]
+        mask = np.isin(detections.class_id, vehicle_ids)
+        vehicle_detections = detections[mask]
+        
+        is_inside_zone = self.zone.trigger(detections=vehicle_detections)
+        zone_vehicles = vehicle_detections[is_inside_zone]
+        occupied_count = len(zone_vehicles)
+        print(occupied_count)
+        
+        
+        
 
 if __name__ == "__main__":
     vision_core = ParkingVisionCore(zone_filepath="zones.json", model_id="yolov8n-640", confidence=0.4)
