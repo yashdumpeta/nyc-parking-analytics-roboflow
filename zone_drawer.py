@@ -33,6 +33,12 @@ def mouse_callback(event, x, y, flags, param):
 
 
 def run_zone_drawer(image_url: str):
+    """
+    Opens an interactive OpenCV window to collect polygon points for a parking zone.
+    Fetches the latest frame from the NYC DOT stream, tracks left-clicks as points,
+    allows undo/reset/new image/confirm/quit controls, and saves the final zone data.
+    """
+    
     global points
     stream_reader = NYCDOTStreamReader(image_url=image_url, poll_interval=5.0)
     frame = stream_reader.get_latest_frame()
@@ -107,7 +113,7 @@ def run_zone_drawer(image_url: str):
             else:
                 sorted_pts = sort_points(points)
                 data = {"zone_points": sorted_pts}
-                with open("zones.json", "w", encoding="utf-8") as f:
+                with open("/outputs/zones.json", "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2)
                 print(f"[Success] Zone points saved to 'zones.json': {sorted_pts}")
                 break
