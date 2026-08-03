@@ -20,10 +20,10 @@ class NYCDOTStreamReader:
         self._last_fetch_time = 0.0
         self._cached_frame = None
 
-    def get_latest_frame(self) -> np.ndarray | None:
+    def get_latest_frame(self, force: bool = False) -> np.ndarray | None:
         current_time = time.time()
 
-        if self._cached_frame is not None and ((current_time - self._last_fetch_time) < self.poll_interval):
+        if not force and self._cached_frame is not None and ((current_time - self._last_fetch_time) < self.poll_interval):
             return self._cached_frame
 
         try:
