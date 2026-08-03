@@ -1,9 +1,24 @@
 import json
+import math
 import cv2
 import numpy as np
 from nycdot_stream import NYCDOTStreamReader
 
 points = []  # List to store the clicked points
+
+
+def sort_points(pts):
+    """
+    Sorts a list of points (x, y) counter-clockwise/clockwise around their centroid
+    to prevent self-intersecting polygons when drawn or saved.
+    """
+    if len(pts) <= 2:
+        return pts
+    # Calculate centroid
+    cx = sum(p[0] for p in pts) / len(pts)
+    cy = sum(p[1] for p in pts) / len(pts)
+    # Sort points by polar angle relative to the centroid
+    return sorted(pts, key=lambda p: math.atan2(p[1] - cy, p[0] - cx))
 
 
 def mouse_callback(event, x, y, flags, param):
@@ -41,18 +56,18 @@ def run_zone_drawer(image_url: str):
     while True:
         display_frame = frame.copy()  # Create a copy of the frame to draw on
         
-        # TODO 5: Draw circles and lines for recorded points
-        # Loop through 'points':
-        for i, point in enumerate(points):
-            #   a. Draw a small filled circle at each point using cv2.circle()
+        # Draw circles at original clicked positions
+        for point in points:
             cv2.circle(display_frame, point, radius=3, color=(0, 255, 0), thickness=-1)
-            #   b. If i > 0, draw a line between points[i-1] and points[i] using cv2.line()
-            if i > 0:
-                cv2.line(display_frame, points[i - 1], point, color=(255, 0, 0), thickness=1)
+            
+        # Sort points relative to centroid to form a clean, non-self-intersecting polygon
+        sorted_pts = sort_points(points)
+        for i in range(1, len(sorted_pts)):
+            cv2.line(display_frame, sorted_pts[i - 1], sorted_pts[i], color=(255, 0, 0), thickness=1)
         
-        # close the polygon by connecting the last point to the first point if there are at least 3 points
-        if len(points) >= 3:
-            cv2.line(display_frame, points[-1], points[0], color=(255, 0, 0), thickness=1)  
+        # Close the polygon by connecting the last point to the first point if there are at least 3 points
+        if len(sorted_pts) >= 3:
+            cv2.line(display_frame, sorted_pts[-1], sorted_pts[0], color=(255, 0, 0), thickness=1)  
             
         # Display the frame with drawn points and lines
         cv2.imshow(window_name, display_frame)
@@ -83,10 +98,11 @@ def run_zone_drawer(image_url: str):
             if len(points) < 3:
                 print("Error: At least 3 points are required to define a polygon.")
             else:
-                data = {"zone_points": points}
+                sorted_pts = sort_points(points)
+                data = {"zone_points": sorted_pts}
                 with open("zones.json", "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2)
-                print(f"[Success] Zone points saved to 'zones.json': {points}")
+                print(f"[Success] Zone points saved to 'zones.json': {sorted_pts}")
                 break
         elif key == ord('q'):
             print("Quitting...")
