@@ -1,4 +1,5 @@
 import os
+
 # Set environment variables BEFORE importing Roboflow libraries
 os.environ["CORE_MODEL_GAZE_ENABLED"] = "False"
 os.environ["CORE_MODEL_SAM_ENABLED"] = "False"
@@ -13,7 +14,7 @@ from enum import IntEnum
 
 class COCOVehicleClass(IntEnum):
     CAR = 2
-    MOTORCYLE = 3
+    MOTORCYCLE = 3
     BUS = 5
     TRUCK = 7
 
@@ -53,7 +54,10 @@ class ParkingVisionCore:
         if verbose:
             print("[Verbose] Starting inference on frame...")
 
+        # Run inference on the frame using the loaded model
         results = self.model.infer(frame, confidence=self.confidence)[0]
+        
+        # Convert the inference results to a Detections object for easier processing
         detections = sv.Detections.from_inference(results)
 
         if verbose:
@@ -115,17 +119,34 @@ class ParkingVisionCore:
         
 
 if __name__ == "__main__":
+    
+    YORK_AVE_URL = "https://webcams.nyctmc.org/api/cameras/d45fb588-de4c-4139-9e27-5b2d4c371b3d/image"
     vision_core = ParkingVisionCore(zone_filepath="zones.json", model_id="yolov8m-640", confidence=0.2)
-    stream_reader = NYCDOTStreamReader("https://webcams.nyctmc.org/api/cameras/d45fb588-de4c-4139-9e27-5b2d4c371b3d/image", poll_interval=10.0)
-    frame = stream_reader.get_latest_frame(force=True)
-    if frame is not None:
-        annotated_frame, occupied_count = vision_core.process_frame(frame, verbose=True)
-        print(f"Occupied Count: {occupied_count}")
+    stream_reader = NYCDOTStreamReader(YORK_AVE_URL, poll_interval=10.0)
+    
+    print("\nStarting Vision Core Stream... Press 'q' in the window to exit.\n")
+    
+    while True:
+        frame = stream_reader.get_latest_frame(force=True)
+        if frame is not None:
+            annotated_frame, occupied_count = vision_core.process_frame(frame, verbose=True)
+            print(f"Occupied Count: {occupied_count}")
 
-        # Source frame is 352x240 - upscale before viewing so boxes/labels are more visible
-        display_frame = cv2.resize(annotated_frame, None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
-        
-        cv2.imwrite("debug_frame.png", display_frame)
-        cv2.imshow("Annotated Frame", display_frame)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+            # Source frame is 352x240 - upscale before viewing so boxes/labels are more visible
+            display_frame = cv2.resize(annotated_frame, None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
+            
+            cv2.putText(
+                display_frame,
+                f"West Curb Occupancy: {occupied_count} vehicles",
+                (20, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 255),
+                2,
+            )
+            
+            cv2.imshow("NYC Curb Utilization - Vision Core", display_frame)
+            
+        if cv2.waitKey(30) & 0xFF == ord("q"):
+            break
+    cv2.destroyAllWindows()
