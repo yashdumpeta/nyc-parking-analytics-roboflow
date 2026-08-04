@@ -122,7 +122,7 @@ if __name__ == "__main__":
     
     YORK_AVE_URL = "https://webcams.nyctmc.org/api/cameras/d45fb588-de4c-4139-9e27-5b2d4c371b3d/image"
     vision_core = ParkingVisionCore(zone_filepath="zones.json", model_id="yolov8m-640", confidence=0.2)
-    stream_reader = NYCDOTStreamReader(YORK_AVE_URL, poll_interval=10.0)
+    stream_reader = NYCDOTStreamReader(YORK_AVE_URL, poll_interval=60.0)
     
     print("\nStarting Vision Core Stream... Press 'q' in the window to exit.\n")
     

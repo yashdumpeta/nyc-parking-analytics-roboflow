@@ -6,7 +6,7 @@ import requests
 
 
 class NYCDOTStreamReader:
-    def __init__(self, image_url: str, poll_interval: float = 2.0) -> None:
+    def __init__(self, image_url: str, poll_interval: float = 60.0) -> None:
         print("Initializing NYC-DOT Stream Reader...\n")
 
         self.image_url = image_url
@@ -50,7 +50,7 @@ class NYCDOTStreamReader:
 if __name__ == "__main__":
     YORK_AVE_URL = "https://webcams.nyctmc.org/api/cameras/d45fb588-de4c-4139-9e27-5b2d4c371b3d/image"
 
-    stream_reader = NYCDOTStreamReader(YORK_AVE_URL, poll_interval=2.0)
+    stream_reader = NYCDOTStreamReader(YORK_AVE_URL, poll_interval=30.0)
 
     print("Finished initializing NYC-DOT Stream Reader object.\n")
     print("Starting stream loop... Press 'q' in the window to quit.\n")

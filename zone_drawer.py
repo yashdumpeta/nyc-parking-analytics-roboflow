@@ -42,7 +42,7 @@ def run_zone_drawer(image_url: str):
     """
     
     global points
-    stream_reader = NYCDOTStreamReader(image_url=image_url, poll_interval=5.0)
+    stream_reader = NYCDOTStreamReader(image_url=image_url, poll_interval=60.0)
     frame = stream_reader.get_latest_frame()
 
     if frame is None:
