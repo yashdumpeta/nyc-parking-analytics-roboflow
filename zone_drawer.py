@@ -1,10 +1,12 @@
 import json
 import math
+import os
 import cv2
 import numpy as np
 from nycdot_stream import NYCDOTStreamReader
 
 points = []  # List to store the clicked points
+SAVE_PATH = os.path.join(os.path.dirname(__file__), "zones.json")
 
 
 def sort_points(pts):
@@ -113,9 +115,9 @@ def run_zone_drawer(image_url: str):
             else:
                 sorted_pts = sort_points(points)
                 data = {"zone_points": sorted_pts}
-                with open("/outputs/zones.json", "w", encoding="utf-8") as f:
+                with open(SAVE_PATH, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2)
-                print(f"[Success] Zone points saved to 'zones.json': {sorted_pts}")
+                print(f"[Success] Zone points saved to '{SAVE_PATH}': {sorted_pts}")
                 break
         elif key == ord('q'):
             print("Quitting...")
