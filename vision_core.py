@@ -129,7 +129,7 @@ if __name__ == "__main__":
     while True:
         frame = stream_reader.get_latest_frame(force=True)
         if frame is not None:
-            annotated_frame, occupied_count = vision_core.process_frame(frame, verbose=True)
+            annotated_frame, occupied_count = vision_core.process_frame(frame)
             print(f"Occupied Count: {occupied_count}")
 
             # Source frame is 352x240 - upscale before viewing so boxes/labels are more visible
