@@ -13,7 +13,8 @@ import cv2
 #Global Variables
 global_state = {
     "annotated_frame" : None,
-    "telemetry": {}
+    "telemetry": {},
+    "active_streams_count": 0
 }
 
 
@@ -61,16 +62,19 @@ async def vision_pipeline_loop():
     """
     print("[System] Background AI Inference loop started...\n")
     while True:
-        frame = await stream_reader.get_latest_frame_async()
-        if frame is not None:
-            # Run inference in a separate thread to keep the event loop responsive
-            annotated_frame, occupied_count = await asyncio.to_thread(vision_core.process_frame, frame)
-            telemetry = financial_engine.calculate_telemetry(occupied_count)
-            
-            # Update the global state
-            global_state["annotated_frame"] = annotated_frame
-            global_state["telemetry"] = telemetry
-        await asyncio.sleep(0.5)
+        if global_state["active_streams_count"] > 0:
+            frame = await stream_reader.get_latest_frame_async()
+            if frame is not None:
+                # Run inference in a separate thread to keep the event loop responsive
+                annotated_frame, occupied_count = await asyncio.to_thread(vision_core.process_frame, frame)
+                telemetry = financial_engine.calculate_telemetry(occupied_count)
+                
+                # Update the global state
+                global_state["annotated_frame"] = annotated_frame
+                global_state["telemetry"] = telemetry
+            await asyncio.sleep(0.5)
+        else:
+            await asyncio.sleep(0.1)
 
 
 @asynccontextmanager
@@ -99,16 +103,22 @@ def get_analytics():
 
 async def frame_generator():
     """Generates a continuous byte stream of JPEG images."""
-    while True:
-        frame = global_state["annotated_frame"]
-        if frame is not None:
-            success, encoded_image = cv2.imencode(".jpg", frame)
-            if success:
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + encoded_image.tobytes() + b'\r\n')
-        
-        # Non-blocking async sleep
-        await asyncio.sleep(0.1)
+    global_state["active_streams_count"] += 1
+    print(f"[System] Stream client connected. Active streams: {global_state['active_streams_count']}")
+    try:
+        while True:
+            frame = global_state["annotated_frame"]
+            if frame is not None:
+                success, encoded_image = cv2.imencode(".jpg", frame)
+                if success:
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + encoded_image.tobytes() + b'\r\n')
+            
+            # Non-blocking async sleep
+            await asyncio.sleep(0.1)
+    finally:
+        global_state["active_streams_count"] -= 1
+        print(f"[System] Stream client disconnected. Active streams: {global_state['active_streams_count']}")
         
 
 @app.get("/api/v1/stream")
