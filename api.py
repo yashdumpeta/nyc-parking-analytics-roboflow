@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from financial_engine import ParkingFinancialEngine
 from nycdot_stream import NYCDOTStreamReader
 from vision_core import ParkingVisionCore
+import cv2
 
 #Global Variables
 latest_annotated_frame = None
@@ -47,6 +48,14 @@ financial_engine = ParkingFinancialEngine(
     window_size=WINDOW_SIZE
 )
 
+@app.get("/")
+def root():
+    """Returns a simple health/status message for the API root."""
+    return {
+        "message": "NYC Parking Smart Analytics API is running.",
+        "routes": ["/api/v1/analytics", "/api/v1/frame"],
+    }
+
 @app.get("/api/v1/analytics")
 def get_analytics():
     """
@@ -65,6 +74,23 @@ def get_analytics():
     pass   
 
 
+@app.get("/api/v1/frame")
+def get_latest_frame_image():
+    """
+    Returns the most recent annotated frame as a JPEG image.
+    """
+    global latest_annotated_frame
+    
+    if latest_annotated_frame is None:
+        return {"error": "No frame processed yet. Call /api/v1/analytics first."}
+    
+    # Compress the NumPy array into a JPEG byte stream
+    success, encoded_image = cv2.imencode(".jpg", latest_annotated_frame)
+    if not success:
+        return {"error": "Failed to encode image"}
+        
+    # Return the raw image bytes with the correct HTTP media type
+    return Response(content=encoded_image.tobytes(), media_type="image/jpeg")
     
 
 
