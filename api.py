@@ -47,6 +47,26 @@ financial_engine = ParkingFinancialEngine(
     window_size=WINDOW_SIZE
 )
 
+@app.get("/api/v1/analytics")
+def get_analytics():
+    """
+    Fetches the latest frame, runs computer vision inference, calculates financial telemetry, and caches the annotated image.
+    """
+    global latest_annotated_frame
+    
+    frame = stream_reader.get_latest_frame()
+    if frame is None:
+        return {"error": "Could not fetch frame"}
+    annotated_frame, occupied_count = vision_core.process_frame(frame)
+    latest_annotated_frame = annotated_frame
+    telemetry = financial_engine.calculate_telemetry(occupied_count)
+    
+    return telemetry
+    pass   
+
+
+    
+
 
 
 
