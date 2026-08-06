@@ -48,7 +48,7 @@ class ParkingFinancialEngine:
 
 if __name__ == "__main__":
     financial_engine = ParkingFinancialEngine(
-        hourly_rate=3.75,
+        hourly_rate=5.00,
         operating_hours_per_day=12.5,
         total_capacity=7,
         window_size=20
