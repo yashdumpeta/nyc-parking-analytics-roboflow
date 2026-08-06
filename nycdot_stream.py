@@ -3,6 +3,7 @@ import time
 import cv2
 import numpy as np
 import requests
+import httpx
 
 
 class NYCDOTStreamReader:
@@ -33,6 +34,31 @@ class NYCDOTStreamReader:
             print("Warning: timed out while fetching image; continuing.")
         except requests.RequestException as exc:
             print(f"Warning: network error while fetching image: {exc}")
+        else:
+            if response.status_code == 200:
+                image_array = np.frombuffer(response.content, dtype=np.uint8)
+                frame = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+
+                if frame is not None:
+                    self._cached_frame = frame
+                    self._last_fetch_time = current_time
+                    print(f"Success! Image shape: {frame.shape}, dtype: {frame.dtype}\n")
+                    return frame
+
+        return None
+
+    async def get_latest_frame_async(self, force: bool = False) -> np.ndarray | None:
+        current_time = time.time()
+
+        if not force and self._cached_frame is not None and ((current_time - self._last_fetch_time) < self.poll_interval):
+            return self._cached_frame
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(self.image_url, headers=self.headers, timeout=5.0)
+                response.raise_for_status()
+        except httpx.HTTPError as exc:
+            print(f"Warning: error while fetching image: {exc}")
         else:
             if response.status_code == 200:
                 image_array = np.frombuffer(response.content, dtype=np.uint8)
