@@ -20,10 +20,10 @@ global_state = {
 
 # Project Constants
 YORK_AVE_URL = "https://webcams.nyctmc.org/api/cameras/d45fb588-de4c-4139-9e27-5b2d4c371b3d/image"
-POLL_INTERVAL = 4.0
+POLL_INTERVAL = 1.0
 
 ZONE_FILEPATH = "zones.json"
-MODEL_ID = "yolov8m-640"
+MODEL_ID = "curbside-parking-mpa/1"
 CONFIDENCE_THRESHOLD = 0.4
 
 HOURLY_RATE = 5.00
