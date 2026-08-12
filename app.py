@@ -63,17 +63,15 @@ col1, col2 = st.columns([3, 2], gap="medium")
 with col1:
     with st.container(border=True):
         st.subheader("📹 Live Camera Feed (York Ave & 72nd St)")
-        # Embed MJPEG live video stream
-        st.components.v1.html(
+        st.markdown(
             f"""
-            <div style="display: flex; justify-content: center; align-items: center; width: 100%; background-color: #0e1117; border-radius: 8px; overflow: hidden;">
+            <div style="display: flex; justify-content: center; align-items: center; width: 100%; background-color: #0e1117; border-radius: 8px; overflow: hidden; padding: 4px;">
                 <img src="{STREAM_ENDPOINT}" 
-                     style="width: 100%; max-height: 520px; object-fit: contain;" 
-                     alt="NYC DOT Live Camera Stream" 
-                     onerror="this.onerror=null; this.src='https://via.placeholder.com/640x480?text=Connecting+to+NYC+DOT+Camera+Feed...';" />
+                     style="width: 100%; border-radius: 6px; object-fit: contain;" 
+                     alt="NYC DOT Live Camera Stream" />
             </div>
             """,
-            height=420,
+            unsafe_allow_html=True,
         )
 
 # Column 2: Live Analytics Fragment (polling every 1s)

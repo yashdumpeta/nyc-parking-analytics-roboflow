@@ -1,3 +1,9 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv(".env.local")
+load_dotenv(".env")
+
 import asyncio
 from contextlib import asynccontextmanager
 import time
@@ -23,8 +29,8 @@ YORK_AVE_URL = "https://webcams.nyctmc.org/api/cameras/d45fb588-de4c-4139-9e27-5
 POLL_INTERVAL = 1.0
 
 ZONE_FILEPATH = "zones.json"
-MODEL_ID = "curbside-parking-mpa/1"
-CONFIDENCE_THRESHOLD = 0.4
+MODEL_ID = os.getenv("MODEL_ID", "curbside-parking-mpa/1")
+CONFIDENCE_THRESHOLD = 0.25
 
 HOURLY_RATE = 5.00
 OPERATING_HOURS_PER_DAY = 12.5

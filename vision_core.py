@@ -1,4 +1,12 @@
+import torch
+if hasattr(torch, "mps") and not hasattr(torch.mps, "current_device"):
+    torch.mps.current_device = lambda: 0
+
 import os
+from dotenv import load_dotenv
+
+load_dotenv(".env.local")
+load_dotenv(".env")
 
 # Set environment variables BEFORE importing Roboflow libraries
 os.environ["CORE_MODEL_GAZE_ENABLED"] = "False"
@@ -19,7 +27,7 @@ class COCOVehicleClass(IntEnum):
     TRUCK = 7
 
 class ParkingVisionCore:
-    def __init__(self, zone_filepath: str = "zones.json", model_id: str = "yolov8n-640", confidence: float = 0.4):
+    def __init__(self, zone_filepath: str = "zones.json", model_id: str = "yolov8m-640", confidence: float = 0.4):
         # Load zone matrix
         polygon_arr = self._load_zone_from_json(zone_filepath)
         
@@ -63,11 +71,16 @@ class ParkingVisionCore:
         if verbose:
             print(f"[Verbose] Total detections: {len(detections)}")
 
-        # Vehicle detection filtering: Only keep detections that match vehicle class IDs
-        vehicle_ids = [vehicle.value for vehicle in COCOVehicleClass]
+        # Vehicle detection filtering: Include 0 ('vehicle') for custom Roboflow models as well as COCO vehicle IDs [2, 3, 5, 7]
+        vehicle_ids = [0, 2, 3, 5, 7]
+        if "class_name" in detections.data and len(detections) > 0:
+            mask = np.array([
+                cid in vehicle_ids or str(cname).lower() in ("vehicle", "car", "truck", "bus", "motorcycle")
+                for cid, cname in zip(detections.class_id, detections.data["class_name"])
+            ])
+        else:
+            mask = np.isin(detections.class_id, vehicle_ids)
 
-        # Create a mask checking which detected class IDs match vehicles
-        mask = np.isin(detections.class_id, vehicle_ids)
         vehicle_detections = detections[mask]
 
         if verbose:
