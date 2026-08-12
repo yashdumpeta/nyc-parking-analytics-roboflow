@@ -101,4 +101,4 @@ source .venv/bin/activate
 streamlit run app.py
 ```
 
-Open your browser and navigate to **`http://localhost:8501`** to view the live dashboard!
+By default, Streamlit will automatically open the interactive presentation dashboard in your browser at **`http://localhost:8501`** (if port 8501 is in use by another application, check your terminal output for the assigned port, e.g. `http://localhost:8502`).
