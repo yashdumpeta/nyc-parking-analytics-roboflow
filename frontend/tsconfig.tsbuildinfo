@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/components/controlsidebar.tsx","./src/components/header.tsx","./src/components/policymodal.tsx","./src/components/telemetrycards.tsx","./src/components/videoplayer.tsx"],"version":"5.7.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/controlsidebar.tsx","./src/components/header.tsx","./src/components/policymodal.tsx","./src/components/telemetrycards.tsx","./src/components/videoplayer.tsx"],"version":"5.7.3"}

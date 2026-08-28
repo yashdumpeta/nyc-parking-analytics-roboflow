@@ -326,3 +326,24 @@ def get_latest_frame_image():
         raise HTTPException(status_code=500, detail="Failed to encode image.")
 
     return Response(content=encoded_image.tobytes(), media_type="image/jpeg")
+
+
+# --------------------------------------------------------------------------------------------------
+# Static Frontend Serving (For Single-Container Production Deployments)
+# --------------------------------------------------------------------------------------------------
+frontend_dist = os.path.join(os.path.dirname(__file__), "frontend", "dist")
+if os.path.exists(frontend_dist):
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.responses import FileResponse
+
+    assets_dir = os.path.join(frontend_dist, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        file_path = os.path.join(frontend_dist, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(frontend_dist, "index.html"))
+

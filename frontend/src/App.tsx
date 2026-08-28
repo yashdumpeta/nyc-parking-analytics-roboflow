@@ -5,7 +5,7 @@ import { TelemetryCards } from './components/TelemetryCards';
 import { ControlSidebar, AppConfig } from './components/ControlSidebar';
 import { PolicyModal } from './components/PolicyModal';
 
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 export const App: React.FC = () => {
   // Config state
