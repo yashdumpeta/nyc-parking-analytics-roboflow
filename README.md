@@ -1,5 +1,5 @@
 # 🏙️ NYC Curb Utilization & Opportunity Cost Engine (v1.0)
-> **AI-Driven Municipal Revenue & Parking Telemetry on York Ave**
+> **AI-Driven Municipal Revenue & Parking Telemetry on York Ave (React + FastAPI + Roboflow)**
 
 ---
 
@@ -12,22 +12,25 @@ This project implements an end-to-end Computer Vision (CV) pipeline that ingests
 
 ## 🛠️ Core Components
 
-| Component | File | Description |
+| Component | File / Directory | Description |
 | :--- | :--- | :--- |
+| **Modern React Dashboard** | [`frontend/`](frontend/) | High-aesthetic dark obsidian telemetry dashboard (Vite + React 19 + TypeScript + Tailwind CSS + Lucide Icons) with live video player, HUD overlays, real-time metric cards, and 60 FPS tuning controls. |
+| **FastAPI Backend & Streamer** | [`api.py`](api.py) | High-performance asynchronous FastAPI server providing real-time telemetry JSON, dynamic parameter tuning (`/api/v1/config`), force snapshot refresh (`/api/v1/refresh`), and continuous MJPEG live streaming (`/api/v1/stream`). |
+| **Vision Core Pipeline** | [`vision_core.py`](vision_core.py) | Roboflow Inference SDK (`yolov8m-640` / `curbside-parking-mpa/1`) + `supervision` pipeline for strict vehicle detection (filtering out pedestrians/cyclists), bottom-center zone triggering, visual anchor dots, and runtime zone alignment. |
+| **Financial Engine** | [`financial_engine.py`](financial_engine.py) | Temporal sliding-window filter for occlusion smoothing, computing hourly, daily (12.5 hrs), and annual (312 meter days) unrealized revenue. |
 | **NYC DOT Stream Reader** | [`nycdot_stream.py`](nycdot_stream.py) | Handles fetching live snapshots from the NYC DOT camera feed with caching (`poll_interval`) via sync and async HTTP clients. |
-| **Interactive Zone Drawer** | [`zone_drawer.py`](zone_drawer.py) | Interactive OpenCV GUI tool to draw custom parking zones on live frames, auto-sorting polygon points to `zones.json`. |
-| **Vision Core Pipeline** | [`vision_core.py`](vision_core.py) | Roboflow Inference SDK (`curbside-parking-mpa/1` or `yolov8m-640`) + `supervision` pipeline for vehicle detection, bottom-center zone triggering, and MPS hardware patching. |
-| **Financial Engine** | [`financial_engine.py`](financial_engine.py) | Temporal sliding-window max filter (`TemporalOccupancyFilter`) for occlusion smoothing, computing hourly, daily, and annual opportunity costs. |
-| **FastAPI Web Backend** | [`api.py`](api.py) | Asynchronous FastAPI server running a non-blocking background inference loop, dynamically active when streaming clients are connected. |
-| **Streamlit Web Dashboard** | [`app.py`](app.py) | Interactive presentation layer featuring live MJPEG video streaming, custom rate/capacity sliders, and auto-refreshing KPI metric cards. |
+| **Interactive Zone Drawer** | [`zone_drawer.py`](zone_drawer.py) | OpenCV GUI calibration tool to establish custom parking zones on live frames, auto-sorting polygon points to `zones.json`. |
+| **Unified Runner** | [`run.py`](run.py) / [`run.sh`](run.sh) | Single-command launcher that orchestrates backend health checks, launches the React frontend, and opens the browser. |
 
 ---
 
 ## 🔌 API Endpoints
 
 * **`GET /`** — Health check, API status, and registered routes.
-* **`GET /api/v1/analytics`** — Returns real-time financial telemetry JSON (`smoothed_occupied_count`, `occupancy_percentage`, opportunity costs).
-* **`GET /api/v1/stream`** — Serves a continuous live, annotated MJPEG video stream of the curb.
+* **`GET /api/v1/analytics`** — Real-time financial telemetry JSON (`smoothed_occupied_count`, `occupancy_percentage`, opportunity costs, detection breakdown).
+* **`GET /api/v1/config` & `POST /api/v1/config`** — Get or dynamically update model ID, confidence threshold, trigger anchor, zone offsets, and meter rates on the fly.
+* **`POST /api/v1/refresh`** — Forces an immediate fresh camera snapshot fetch from NYCDOT and re-runs inference.
+* **`GET /api/v1/stream`** — Serves a continuous live, annotated MJPEG video stream with visual anchor indicators.
 * **`GET /api/v1/frame`** — Returns the single most recent annotated JPEG frame.
 
 ---
@@ -36,79 +39,76 @@ This project implements an end-to-end Computer Vision (CV) pipeline that ingests
 
 ### 1. Environment & Dependency Installation
 
-Create and activate a virtual environment, then install the required dependencies:
-
+#### Backend (Python 3.10+)
 ```bash
 # Create and activate virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install required packages
+# Install required Python packages
 pip install -r requirements.txt
 ```
 
-> [!NOTE]
-> **Installation Note**: Downloading and building dependencies from `requirements.txt` may take several minutes as it installs computer vision and deep learning packages including the Roboflow Inference SDK, PyTorch, Supervision, OpenCV, and ONNX Runtime.
+#### Frontend (Node.js 18+)
+```bash
+cd frontend
+npm install
+cd ..
+```
 
 ---
 
-### 2. Roboflow API Key Configuration
+### 2. Roboflow API Key Configuration (Optional)
 
-If you intend to use custom fine-tuned Roboflow models (such as `curbside-parking-mpa/1`), create a `.env` or `.env.local` file in the project root directory and add your Roboflow API key:
+Public models (e.g. `yolov8n-640` or `yolov8m-640`) run out-of-the-box without requiring an API key. If you intend to use custom fine-tuned Roboflow models (such as `curbside-parking-mpa/1`), create a `.env` or `.env.local` file in the project root:
 
 ```env
 ROBOFLOW_API_KEY=your_roboflow_api_key_here
+MODEL_ID=yolov8m-640
 ```
-
-*To obtain your API key, visit the [Roboflow Authentication Documentation](https://docs.roboflow.com/api-reference/authentication#retrieve-an-api-key).*
-
-> [!TIP]
-> Public models (e.g. `yolov8n-640` or `yolov8m-640`) run out-of-the-box without requiring a Roboflow API key.
 
 ---
 
-### 3. Draw & Calibrate the Parking Zone
+### 3. Run the Entire Fullstack Platform
 
-Run the interactive calibration tool to establish your detection polygon zone around the curb lane:
+#### Option A: Unified Single-Command Launch (Recommended)
+Launch both the FastAPI backend and Modern React Dashboard simultaneously:
 
 ```bash
-python zone_drawer.py
+# Using Python
+python run.py
+
+# Or using the shell wrapper
+./run.sh
 ```
 
-* **Controls**:
-  * Left-click 4 corners along the West Curb parking lane.
-  * `z` — Undo last point
-  * `r` — Reset all points
-  * `e` — Fetch new snapshot from NYCDOT stream
-  * `c` — Confirm & save polygon coordinates to `zones.json`
-  * `q` — Quit
+This starts the FastAPI backend, verifies the health check, boots the Vite React frontend, and automatically opens your browser at **`http://localhost:5173`**. Pressing `Ctrl+C` cleanly shuts down all processes.
 
----
+#### Option B: Manual Multi-Terminal Launch
 
-### 4. Run the Application
-
-#### Terminal 1: Launch FastAPI Backend
-Start the backend web service using Uvicorn:
+**Terminal 1: FastAPI Backend**
 ```bash
 source .venv/bin/activate
 uvicorn api:app --reload --port 8000
 ```
 
-#### Terminal 2: Launch Streamlit Presentation Dashboard
-In a second terminal window, start the Streamlit web dashboard:
+**Terminal 2: React Frontend**
 ```bash
-source .venv/bin/activate
-streamlit run app.py
+cd frontend
+npm run dev
 ```
-
-By default, Streamlit will automatically open the interactive presentation dashboard in your browser at **`http://localhost:8501`** (if port 8501 is in use by another application, check your terminal output for the assigned port, e.g. `http://localhost:8502`).
 
 ---
 
-### 5. Running the Automated Test Suite
+### 4. Running the Automated Test Suite
 
-Run the hermetic unit and API test suite:
+Execute the hermetic unit and integration test suite:
 
 ```bash
 pytest -v
 ```
+
+---
+
+## 📜 License
+Distributed under the [MIT License](LICENSE).
