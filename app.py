@@ -82,7 +82,11 @@ with col2:
             st.subheader("📊 Real-Time Financial Telemetry")
             
             try:
-                response = requests.get(ANALYTICS_ENDPOINT, timeout=1.5)
+                params = {
+                    "hourly_rate": hourly_rate,
+                    "total_capacity": total_capacity,
+                }
+                response = requests.get(ANALYTICS_ENDPOINT, params=params, timeout=1.5)
                 if response.status_code == 200:
                     data = response.json()
                     

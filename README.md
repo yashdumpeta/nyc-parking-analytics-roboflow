@@ -102,3 +102,13 @@ streamlit run app.py
 ```
 
 By default, Streamlit will automatically open the interactive presentation dashboard in your browser at **`http://localhost:8501`** (if port 8501 is in use by another application, check your terminal output for the assigned port, e.g. `http://localhost:8502`).
+
+---
+
+### 5. Running the Automated Test Suite
+
+Run the hermetic unit and API test suite:
+
+```bash
+pytest -v
+```

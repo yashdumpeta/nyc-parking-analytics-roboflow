@@ -9,14 +9,16 @@ load_dotenv(".env.local")
 load_dotenv(".env")
 
 # Set environment variables BEFORE importing Roboflow libraries
-os.environ["CORE_MODEL_GAZE_ENABLED"] = "False"
-os.environ["CORE_MODEL_SAM_ENABLED"] = "False"
-os.environ["CORE_MODEL_YOLO_WORLD_ENABLED"] = "False"
-os.environ["USE_INFERENCE_MODELS"] = "False"
+os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
+os.environ["CORE_MODEL_GAZE_ENABLED"] = "false"
+os.environ["CORE_MODEL_SAM_ENABLED"] = "false"
+os.environ["CORE_MODEL_YOLO_WORLD_ENABLED"] = "false"
+os.environ["USE_INFERENCE_MODELS"] = "false"
 
-from inference import get_model
-import json, cv2, numpy as np
-import inference, supervision as sv
+import json
+import cv2
+import numpy as np
+import supervision as sv
 from nycdot_stream import NYCDOTStreamReader
 from enum import IntEnum
 
@@ -53,7 +55,8 @@ class ParkingVisionCore:
             text_offset=(0, 0),
         )
         
-        # Load Roboflow Inference Model
+        # Load Roboflow Inference Model lazily
+        from inference import get_model
         self.confidence = confidence
         self.model = get_model(model_id=model_id)
         print(f"[Success] Loaded Roboflow model '{model_id}' with confidence threshold {confidence}.\n")
@@ -109,26 +112,24 @@ class ParkingVisionCore:
 
         return annotated_frame, occupied_count
         
+    DEFAULT_ZONE_POINTS = [[310, 61], [329, 65], [86, 152], [61, 137]]
+
     def _load_zone_from_json(self, file_path: str) -> np.ndarray:
         """
         Loads zone coordinates from JSON and returns a 2D int32 NumPy array.
+        Falls back to default York Ave coordinates if the file is not found.
         """
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                
             zone_points = data["zone_points"]
             return np.array(zone_points, dtype=np.int32)
-
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                f"[Error] Zone configuration file '{file_path}' not found. "
-                "Please run zone_drawer.py first to generate it!"
+        except (FileNotFoundError, KeyError, json.JSONDecodeError) as exc:
+            print(
+                f"[Warning] Could not load zone configuration from '{file_path}' ({exc}). "
+                "Falling back to default York Ave curb polygon."
             )
-        except KeyError:
-            raise KeyError(
-                f"[Error] Key 'zone_points' not found in '{file_path}'."
-            )
+            return np.array(self.DEFAULT_ZONE_POINTS, dtype=np.int32)
         
 
 if __name__ == "__main__":

@@ -23,27 +23,53 @@ class ParkingFinancialEngine:
         self.temporal_filter = TemporalOccupancyFilter(window_size=window_size)
         print(f"[Success] Initialized ParkingFinancialEngine with total capacity {total_capacity}, hourly rate {hourly_rate}, and operating {operating_hours_per_day} hours per day .\n")
         
-    def calculate_telemetry(self, raw_occupied_count: int) -> dict:
-        
-        # get the smoothed count of occupied spaces based on the sliding window of recent counts
-        smoothed_occupied_count = self.temporal_filter.update(raw_occupied_count) 
-        
-        # in the case that it miscounts and detects more vehicles in the parking zone
-        effective_count = min(smoothed_occupied_count, self.total_capacity) 
-        
-        # Calculate occupancy percentage and opportunity costs
-        occupancy_percentage = (effective_count / self.total_capacity) * 100
-        hourly_opportunity_cost = effective_count * self.hourly_rate
-        daily_opportunity_cost = hourly_opportunity_cost * self.operating_hours_per_day
+    def compute_telemetry(
+        self,
+        count: int,
+        hourly_rate: float | None = None,
+        operating_hours_per_day: float | None = None,
+        total_capacity: int | None = None,
+    ) -> dict:
+        """
+        Computes financial telemetry from a known count without advancing the filter buffer.
+        """
+        rate = hourly_rate if hourly_rate is not None else self.hourly_rate
+        hours = operating_hours_per_day if operating_hours_per_day is not None else self.operating_hours_per_day
+        capacity = total_capacity if total_capacity is not None else self.total_capacity
+
+        effective_count = min(count, capacity)
+        occupancy_percentage = (effective_count / capacity * 100) if capacity > 0 else 0.0
+        hourly_opportunity_cost = effective_count * rate
+        daily_opportunity_cost = hourly_opportunity_cost * hours
+        # 312 operating days/year based on 6 paid meter days/week * 52 weeks (Sundays free in NYC)
         annual_opportunity_cost = daily_opportunity_cost * 312
-        
+
         return {
             "smoothed_occupied_count": effective_count,
             "occupancy_percentage": round(occupancy_percentage, 2),
             "hourly_opportunity_cost": round(hourly_opportunity_cost, 2),
             "daily_opportunity_cost": round(daily_opportunity_cost, 2),
-            "annual_opportunity_cost": round(annual_opportunity_cost, 2)
+            "annual_opportunity_cost": round(annual_opportunity_cost, 2),
+            "hourly_rate": round(rate, 2),
+            "total_capacity": capacity,
+            "operating_hours_per_day": hours,
         }
+
+    def calculate_telemetry(
+        self,
+        raw_occupied_count: int,
+        hourly_rate: float | None = None,
+        operating_hours_per_day: float | None = None,
+        total_capacity: int | None = None,
+    ) -> dict:
+        # get the smoothed count of occupied spaces based on the sliding window of recent counts
+        smoothed_occupied_count = self.temporal_filter.update(raw_occupied_count)
+        return self.compute_telemetry(
+            count=smoothed_occupied_count,
+            hourly_rate=hourly_rate,
+            operating_hours_per_day=operating_hours_per_day,
+            total_capacity=total_capacity,
+        )
         
 
 if __name__ == "__main__":
