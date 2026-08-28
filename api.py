@@ -347,3 +347,10 @@ if os.path.exists(frontend_dist):
             return FileResponse(file_path)
         return FileResponse(os.path.join(frontend_dist, "index.html"))
 
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("api:app", host="0.0.0.0", port=port)
+
+
