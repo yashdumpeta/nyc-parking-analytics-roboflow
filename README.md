@@ -10,6 +10,26 @@ This project implements an end-to-end Computer Vision (CV) pipeline that ingests
 
 ---
 
+## 🖥️ Live Telemetry Dashboard Preview
+
+<!-- Demo Showcase Placeholder: Add demo GIF/video here -->
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 🏙️ NYC Curb Telemetry & Revenue Engine                 🟢 NYCDOT LIVE  [Force Snapshot]     │
+├──────────────────────────────────────────────────────────┬──────────────────────────────────┤
+│ 📹 NYC DOT CCTV Feed | York Ave & 72nd St  [yolov8m-640] │ ⚙️ AI Detection Tuning           │
+│ 🟢 ACTIVE • 🟢 In Zone • 🟠 Out Zone • Occupancy: 4/7    │   Confidence Threshold: 25%      │
+│ ┌──────────────────────────────────────────────────────┐ │   Model: yolov8m-640             │
+│ │ [ Live Camera Stream with Polygon Overlay & BBoxes ] │ │   Anchor: BOTTOM_CENTER          │
+│ └──────────────────────────────────────────────────────┘ │ 📐 Zone Alignment (Shift X/Y)    │
+│ ┌──────────────────────────┬───────────────────────────┐ │ 💰 Municipal Rate Simulation     │
+│ │ Curb Occupancy: 57.1%    │ Hourly Loss: $20.00 / hr  │ │   Meter Rate: $5.00 / hr         │
+│ │ Daily Loss: $250.00      │ Annual Loss: $78,000.00   │ │   Capacity: 7 spots              │
+│ └──────────────────────────┴───────────────────────────┘ └──────────────────────────────────┘
+```
+
+---
+
 ## 🛠️ Core Components
 
 | Component | File / Directory | Description |
